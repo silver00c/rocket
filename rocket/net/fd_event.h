@@ -14,6 +14,8 @@ public:
 
     FdEvent(int fd);
 
+    FdEvent();
+
     ~FdEvent();
 
     std::function<void()> handler(TriggerEvent event_type);
@@ -36,8 +38,8 @@ protected:
     std::function<void()> m_read_callback;
     std::function<void()> m_write_callback;
 
+    
 };
-
 }
 
 #endif
