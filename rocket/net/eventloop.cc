@@ -95,7 +95,7 @@ void EventLoop::initWakeUpFdEvent() {
 
     m_wakeup_fd_event = new WakeUpFdEvent(m_wakeup_fd);
 
-    //监听wakefd，当有数据写入时，读取数据并通过addEpollEvent(m_wakeup_fd_event)唤醒线程，如果是主线程，则添加至EPOLL；如果是IOThread，则添加入任务队列
+    
     m_wakeup_fd_event->listen(FdEvent::IN_EVENT, [this](){
         char buf[8];
         while(read(m_wakeup_fd, buf, 8) != -1 && errno != EAGAIN) {

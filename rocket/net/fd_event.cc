@@ -1,6 +1,7 @@
 #include <string.h>
 #include "rocket/net/fd_event.h"
 #include "rocket/common/log.h"
+#include "fd_event.h"
 
 namespace rocket {
 FdEvent::FdEvent(int fd) : m_fd(fd) {
