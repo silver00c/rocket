@@ -211,6 +211,27 @@ mainReactor由主线程运行，他作用如下：通过epoll监听listenfd的�
 
 subReactor通常有多个，每个subReactor由一个线程来运行。subReactor的epoll中注册了clientfd的读写事件，当发生IO事件后，需要进行业务处理。
 
+```
+FdEvent
+  封装fd
+  handler 返回不同信号下对应的不同类型的回调
+  listen  不同类型信号下指定回调函数
+
+WakeUpFdEvent
+  在EventLoop初始化时，调用initWakeUpFdEvent()
+  其中监听wakefd，当有数据写入时，读取数据并通过addEpollEvent(m_wakeup_fd_event)唤醒listenfd线程，如果是在主线程，则将其添加至EPOLL；如果是在IOThread，则添加入任务队列，当IO处理完后会重新唤醒并将其添加入EPOLL
+
+主线程EventLoop
+  epoll - listenfd
+  将listenfd添加入执行队列，当accept之后会唤醒并执行回调函数，即创建IOThread处理IO事件
+
+IOThread
+  epoll - clientfd
+
+
+```
+
+
 #### 2.4.1 TimerEvent 定时任务
 ```
 1. 指定时间点 arrive_time

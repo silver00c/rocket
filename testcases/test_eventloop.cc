@@ -11,6 +11,7 @@
 #include "rocket/net/eventloop.h"
 #include "rocket/net/timer_event.h"
 #include "rocket/net/io_thread.h"
+#include "rocket/net/io_thread_group.h"
 
 void test_io_thread() {
   //rocket::EventLoop* eventloop = new rocket::EventLoop();
@@ -47,9 +48,7 @@ void test_io_thread() {
     int clientfd = accept(listenfd, reinterpret_cast<sockaddr*>(&peer_addr), &addr_len);
 
     DEBUGLOG("success get client fd[%d], peer addr: [%s:%d]", clientfd, inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port));
-
-  });
-  //eventloop->addEpollEvent(&event);
+  });//监听到IN_EVENT后accept
 
   int i = 0;
   rocket::TimerEvent::s_ptr timer_event = std::make_shared<rocket::TimerEvent>(
@@ -58,17 +57,24 @@ void test_io_thread() {
     }
   ); 
 
-  //eventloop->addTimerEvent(timer_event);
+  //rocket::IOThread io_thread;//创建IOThread处理clientfd
 
-  //eventloop->loop();
+  //io_thread.getEventLoop()->addEpollEvent(&event);
+  //io_thread.getEventLoop()->addTimerEvent(timer_event);
+  //io_thread.start();
 
-  rocket::IOThread io_thread;
+  //io_thread.join(); 
+  rocket::IOThreadGroup io_thread_group(2);
+  rocket::IOThread* io_thread = io_thread_group.getIOThread();
+  io_thread->getEventLoop()->addEpollEvent(&event);
+  io_thread->getEventLoop()->addTimerEvent(timer_event);
+  
+  rocket::IOThread* io_thread2 = io_thread_group.getIOThread();
+  io_thread2->getEventLoop()->addTimerEvent(timer_event);
 
-  io_thread.getEventLoop()->addEpollEvent(&event);
-  io_thread.getEventLoop()->addTimerEvent(timer_event);
-  io_thread.start();
+  io_thread_group.start();
+  io_thread_group.join();
 
-  io_thread.join(); 
 }
 
 int main() {

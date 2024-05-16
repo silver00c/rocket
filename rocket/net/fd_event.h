@@ -31,14 +31,12 @@ public:
     }
 
 protected:
-    int m_fd {-1};
+    int m_fd {-1};  //listenfd
 
     epoll_event m_listen_events;
 
     std::function<void()> m_read_callback;
     std::function<void()> m_write_callback;
-
-    
 };
 }
 
