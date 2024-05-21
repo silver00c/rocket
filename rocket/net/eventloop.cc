@@ -16,7 +16,7 @@
     INFOLOG("epoll_event.events = %d", (int)tmp.events);\
     int rt = epoll_ctl(m_epoll_fd, op, event->getFd(), &tmp);\
     if(rt == -1) {\
-        ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s", errno, strerror(errno));\
+        ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s event.fd=%d", errno, strerror(errno), event->getFd());\
     }\
     m_listen_fds.insert(event->getFd());\
     DEBUGLOG("add event success, fd[%d]", event->getFd())\

@@ -9,7 +9,7 @@ static FdEventGroup* g_fd_event_group = NULL;
 
 FdEventGroup::FdEventGroup(int size) : m_size(size) {
     for(int i = 0; i < m_size; i ++) {
-        m_fd_group.push_back(new FdEvent());
+        m_fd_group.push_back(new FdEvent(i));//
     }
 }
 
