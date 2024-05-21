@@ -35,18 +35,28 @@ void TcpServer::init() {
 }
 
 void TcpServer::onAccept() {
-  int client_fd = m_acceptor->accept();
-  // FdEvent client_fd_event(client_fd);
-  m_client_counts++;
+    //int client_fd = m_acceptor->accept();
+    // FdEvent client_fd_event(client_fd);
+    auto re = m_acceptor->accept();
+    int client_fd = re.first;
+    NetAddr::s_ptr peer_addr = re.second;
 
-  // TODO: 把 cleintfd 添加到任意 IO 线程里面
-  // m_io_thread_group->getIOThread()->getEventLoop()->addEpollEvent(client_fd_event);
+    m_client_counts++;
 
-  INFOLOG("TcpServer succ get client, fd=%d", client_fd);
+    // TODO: 把 cleintfd 添加到任意 IO 线程里面
+    // m_io_thread_group->getIOThread()->getEventLoop()->addEpollEvent(client_fd_event);
+    // 把 cleintfd 添加到任意 IO 线程里面
+    IOThread* io_thread = m_io_thread_group->getIOThread();
+    TcpConnection::s_ptr connetion = std::make_shared<TcpConnection>(io_thread, client_fd, 128, peer_addr);
+    connetion->setState(Connected);
+
+    m_client.insert(connetion);
+
+    INFOLOG("TcpServer succ get client, fd=%d", client_fd);
 }
 
 void TcpServer::start() {
-    m_io_thread_group->start();
+    m_io_thread_group->start(); 
     m_main_event_loop->loop();
 }
 }

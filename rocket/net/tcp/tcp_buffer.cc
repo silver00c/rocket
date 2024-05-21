@@ -35,6 +35,7 @@ void TcpBuffer::writeToBuffer(const char* buf, int size) {
         m_buffer.resize((int)(1.5 * (m_write_index + size)));
     }
     memcpy(&m_buffer[m_write_index], buf, size);
+    m_write_index += size;
 }
 
 void TcpBuffer::readFromBuffer(std::vector<char>& re, int size) {

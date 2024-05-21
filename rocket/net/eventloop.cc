@@ -5,7 +5,6 @@
 #include "rocket/net/eventloop.h"
 #include "rocket/common/log.h"
 #include "rocket/common/util.h"
-#include "eventloop.h"
 
 #define ADD_TO_EPOLL() \
     auto it = m_listen_fds.find(event->getFd());\
@@ -18,7 +17,6 @@
     int rt = epoll_ctl(m_epoll_fd, op, event->getFd(), &tmp);\
     if(rt == -1) {\
         ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s", errno, strerror(errno));\
-        exit(0);\
     }\
     m_listen_fds.insert(event->getFd());\
     DEBUGLOG("add event success, fd[%d]", event->getFd())\
@@ -30,11 +28,11 @@
     }\
     int op = EPOLL_CTL_DEL;\
     epoll_event tmp = event->getEpollEvent();\
-    int rt = epoll_ctl(m_epoll_fd, op, event->getFd(), &tmp);\
+    int rt = epoll_ctl(m_epoll_fd, op, event->getFd(), NULL);\
     if(rt == -1) {\
-        ERRORLOG("failed epoll_ctl when add fd, errno=%d, error=%s", errno, strerror(errno));\
-        exit(0);\
+        ERRORLOG("failed epoll_ctl when delete fd, errno=%d, error=%s", errno, strerror(errno));\
     }\
+    m_listen_fds.erase(event->getFd());\
     DEBUGLOG("delete event success, fd[%d]", event->getFd());\
 
 namespace rocket {
@@ -94,7 +92,6 @@ void EventLoop::initWakeUpFdEvent() {
     INFOLOG("wakeup fd = %d", m_wakeup_fd);
 
     m_wakeup_fd_event = new WakeUpFdEvent(m_wakeup_fd);
-
     
     m_wakeup_fd_event->listen(FdEvent::IN_EVENT, [this](){
         char buf[8];
@@ -108,8 +105,10 @@ void EventLoop::initWakeUpFdEvent() {
 }
 
 void EventLoop::loop() {
+    //m_is_looping = true;
     while(!m_stop_flag) {
-        ScopeMutext<Mutex> lock(m_mutex);
+        ScopeMutex<Mutex> lock(m_mutex);
+        //一种常见的技巧，用于在持有锁的最短时间内完成对共享资源的修改，然后可以在锁外继续处理这些任务。
         std::queue<std::function<void()>> tmp_tasks;
         m_pending_tasks.swap(tmp_tasks);
         lock.unlock();
@@ -129,7 +128,7 @@ void EventLoop::loop() {
         DEBUGLOG("now end epoll_wait, rt = %d", rt);
 
         if(rt < 0) {
-            ERRORLOG("epoll_wait error, error=", errno);
+            ERRORLOG("epoll_wait error, errno=%d, error=%s", errno, strerror(errno));
         } else {
             for(int i = 0; i < rt; i ++) {
                 epoll_event trigger_event = result_events[i];
@@ -187,7 +186,7 @@ void EventLoop::deleteEpollEvent(FdEvent* event) {
 }
 
 void EventLoop::addTask(std::function<void()> cb, bool is_wake_up /*false*/) {
-    ScopeMutext<Mutex> lock(m_mutex);
+    ScopeMutex<Mutex> lock(m_mutex);
     m_pending_tasks.push(cb);
     lock.unlock();
 
@@ -207,4 +206,9 @@ EventLoop* EventLoop::GetCurrentEventLoop() {
   t_current_eventloop = new EventLoop();
   return t_current_eventloop;
 }
+
+// bool EventLoop::isLooping() {
+//     return m_is_looping;
+// }
+
 }
